@@ -1,4 +1,4 @@
-import { sql } from '../src/lib/neon.js';
+import { sql } from './neon-node.js';
 
 async function testChatSessions() {
   try {

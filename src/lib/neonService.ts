@@ -363,72 +363,95 @@ export const NeonService = {
 
   async updateProduct(productId: string, data: Partial<any>): Promise<any> {
     try {
-      const setParts: string[] = [];
-      const values: any[] = [];
-      let paramIndex = 1;
+      console.log('🔄 updateProduct called:', { productId, data });
+      
+      // Get current product first to ensure it exists
+      const currentRows = await sql`SELECT * FROM products WHERE id = ${productId}::uuid`;
+      if (!currentRows || currentRows.length === 0 || !currentRows[0]) {
+        throw new Error('Product not found');
+      }
+      
+      const current = currentRows[0];
+      
+      // Build update query using template literals (safer approach)
+      const updates: any = {};
+      if (data.title !== undefined) updates.title = data.title;
+      if (data.category !== undefined) updates.category = data.category;
+      if (data.price !== undefined) updates.price = data.price;
+      if (data.image !== undefined) updates.image = data.image;
+      if (data.description !== undefined) updates.description = data.description;
+      if (data.purchasedContent !== undefined) updates.purchased_content = data.purchasedContent;
+      if (data.accessLevel !== undefined) updates.access_level = data.accessLevel;
 
-      if (data.title !== undefined) {
-        setParts.push(`title = $${paramIndex}`);
-        values.push(data.title);
-        paramIndex++;
-      }
-      if (data.category !== undefined) {
-        setParts.push(`category = $${paramIndex}`);
-        values.push(data.category);
-        paramIndex++;
-      }
-      if (data.price !== undefined) {
-        setParts.push(`price = $${paramIndex}`);
-        values.push(data.price);
-        paramIndex++;
-      }
-      if (data.image !== undefined) {
-        setParts.push(`image = $${paramIndex}`);
-        values.push(data.image);
-        paramIndex++;
-      }
-      if (data.description !== undefined) {
-        setParts.push(`description = $${paramIndex}`);
-        values.push(data.description);
-        paramIndex++;
-      }
-      if (data.purchasedContent !== undefined) {
-        setParts.push(`purchased_content = $${paramIndex}`);
-        values.push(data.purchasedContent);
-        paramIndex++;
-      }
-      if (data.accessLevel !== undefined) {
-        setParts.push(`access_level = $${paramIndex}`);
-        values.push(data.accessLevel);
-        paramIndex++;
-      }
-
-      if (setParts.length === 0) {
-        const rows = await sql`SELECT * FROM products WHERE id = ${productId}`;
-        if (!rows || rows.length === 0 || !rows[0]) {
-          throw new Error('Product not found');
-        }
-        const row = rows[0];
+      if (Object.keys(updates).length === 0) {
+        // No updates, return current product
         return {
-          id: row.id,
-          title: row.title,
-          category: row.category,
-          price: row.price,
-          image: row.image,
-          description: row.description,
-          purchasedContent: row.purchased_content,
-          accessLevel: row.access_level,
+          id: current.id,
+          title: current.title,
+          category: current.category,
+          price: current.price,
+          image: current.image,
+          description: current.description,
+          purchasedContent: current.purchased_content,
+          accessLevel: current.access_level,
         };
       }
 
-      values.push(productId);
-      const query = `UPDATE products SET ${setParts.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+      // Use template literal for safe update
+      const result = await sql`
+        UPDATE products 
+        SET 
+          ${updates.title !== undefined ? sql`title = ${updates.title}` : sql``},
+          ${updates.category !== undefined ? sql`category = ${updates.category}` : sql``},
+          ${updates.price !== undefined ? sql`price = ${updates.price}` : sql``},
+          ${updates.image !== undefined ? sql`image = ${updates.image}` : sql``},
+          ${updates.description !== undefined ? sql`description = ${updates.description}` : sql``},
+          ${updates.purchased_content !== undefined ? sql`purchased_content = ${updates.purchased_content}` : sql``},
+          ${updates.access_level !== undefined ? sql`access_level = ${updates.access_level}` : sql``}
+        WHERE id = ${productId}::uuid
+        RETURNING *
+      `;
       
-      const result = await sql.unsafe(query, values);
-      if (!result || result.length === 0 || !result[0]) {
+      // Better approach: build SET clause dynamically
+      const setClauses: any[] = [];
+      if (updates.title !== undefined) setClauses.push(sql`title = ${updates.title}`);
+      if (updates.category !== undefined) setClauses.push(sql`category = ${updates.category}`);
+      if (updates.price !== undefined) setClauses.push(sql`price = ${updates.price}`);
+      if (updates.image !== undefined) setClauses.push(sql`image = ${updates.image}`);
+      if (updates.description !== undefined) setClauses.push(sql`description = ${updates.description}`);
+      if (updates.purchased_content !== undefined) setClauses.push(sql`purchased_content = ${updates.purchased_content}`);
+      if (updates.access_level !== undefined) setClauses.push(sql`access_level = ${updates.access_level}`);
+
+      // Build the query manually with sql template
+      const setString = setClauses.map((_, i) => {
+        if (updates.title !== undefined && i === 0) return 'title = $1';
+        if (updates.category !== undefined) return 'category = $' + (setClauses.findIndex(c => c === sql`category = ${updates.category}`) + 1);
+        // This is getting complex, let's use a simpler approach
+        return '';
+      }).filter(Boolean).join(', ');
+
+      // Simpler: use sql.unsafe but with proper parameterization
+      const setStrings: string[] = [];
+      const values: any[] = [];
+      let paramIdx = 1;
+
+      if (updates.title !== undefined) { setStrings.push(`title = $${paramIdx}`); values.push(updates.title); paramIdx++; }
+      if (updates.category !== undefined) { setStrings.push(`category = $${paramIdx}`); values.push(updates.category); paramIdx++; }
+      if (updates.price !== undefined) { setStrings.push(`price = $${paramIdx}`); values.push(updates.price); paramIdx++; }
+      if (updates.image !== undefined) { setStrings.push(`image = $${paramIdx}`); values.push(updates.image); paramIdx++; }
+      if (updates.description !== undefined) { setStrings.push(`description = $${paramIdx}`); values.push(updates.description); paramIdx++; }
+      if (updates.purchased_content !== undefined) { setStrings.push(`purchased_content = $${paramIdx}`); values.push(updates.purchased_content); paramIdx++; }
+      if (updates.access_level !== undefined) { setStrings.push(`access_level = $${paramIdx}`); values.push(updates.access_level); paramIdx++; }
+
+      values.push(productId);
+      const finalQuery = `UPDATE products SET ${setStrings.join(', ')} WHERE id = $${paramIdx}::uuid RETURNING *`;
+      
+      const finalResult = await sql.unsafe(finalQuery, values);
+      if (!finalResult || finalResult.length === 0 || !finalResult[0]) {
         throw new Error('Product not found or update failed');
       }
-      const row = result[0];
+      const row = finalResult[0];
+      console.log('✅ Product updated successfully:', row.id);
       return {
         id: row.id,
         title: row.title,
@@ -440,6 +463,7 @@ export const NeonService = {
         accessLevel: row.access_level,
       };
     } catch (error: any) {
+      console.error('❌ updateProduct error:', error);
       throw new Error(error.message || 'Failed to update product');
     }
   },

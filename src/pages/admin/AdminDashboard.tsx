@@ -89,7 +89,7 @@ export default function AdminDashboard() {
                         <CardTitle className="text-sm font-medium">Общий доход</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">${stats.totalRevenue}</div>
+                        <div className="text-2xl font-bold">{stats.totalRevenue} ₽</div>
                     </CardContent>
                 </Card>
                 <Card>

@@ -43,7 +43,7 @@ export default function DashboardHome() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(user.stats?.totalSpent || 0).toFixed(2)}</div>
+            <div className="text-2xl font-bold">{(user.stats?.totalSpent || 0).toFixed(0)} ₽</div>
             <p className="text-xs text-muted-foreground">Всего расходов</p>
           </CardContent>
         </Card>
@@ -80,7 +80,7 @@ export default function DashboardHome() {
                                      <p className="text-xs text-muted-foreground">{new Date(tx.date).toLocaleDateString()}</p>
                                  </div>
                              </div>
-                             <div className="font-bold">-${tx.amount}</div>
+                             <div className="font-bold">-{tx.amount.toFixed(0)} ₽</div>
                         </div>
                     ))}
                 </div>

@@ -1,4 +1,4 @@
-import { sql } from '../src/lib/neon';
+import { sql } from './neon-node.js';
 
 async function checkUsers() {
   try {

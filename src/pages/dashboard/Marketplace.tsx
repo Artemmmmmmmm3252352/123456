@@ -144,7 +144,7 @@ export default function MarketplacePage() {
                             <CardDescription className="line-clamp-2">{product.description || "Полный доступ навсегда"}</CardDescription>
                         </CardHeader>
                         <CardFooter className="flex justify-between items-center">
-                            <span className="text-lg font-bold">${product.price.toFixed(2)}</span>
+                            <span className="text-lg font-bold">{product.price.toFixed(0)} ₽</span>
                             {isOwned(product.id) ? (
                                 <Button variant="secondary" onClick={() => navigate("/dashboard/library")}>
                                     Открыть

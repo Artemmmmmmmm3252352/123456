@@ -16,7 +16,8 @@
     "check-db": "tsx scripts/check-db.ts",
     "check-users": "tsx scripts/check-users.ts",
     "test-chats": "tsx scripts/test-chat-sessions.ts",
-    "check-chat": "tsx scripts/check-chat-session.ts"
+    "check-chat": "tsx scripts/check-chat-session.ts",
+    "check-all": "tsx scripts/check-all-data.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

@@ -101,7 +101,7 @@ export default function LibraryPage() {
                     </div>
                     <div>
                         <div className="text-xs text-muted-foreground">Ваш баланс</div>
-                        <div className="text-xl font-bold">${user.balance?.toFixed(2) || "0.00"}</div>
+                        <div className="text-xl font-bold">{user.balance?.toFixed(0) || "0"} ₽</div>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setIsTopUpOpen(true)}>Пополнить</Button>
                 </Card>

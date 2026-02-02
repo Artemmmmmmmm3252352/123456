@@ -20,6 +20,14 @@ const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
 
 if (!GROQ_API_KEY) {
   console.error('⚠️ VITE_GROQ_API_KEY is not set! AI chat will not work.');
+  console.error('   Проверьте файл .env и убедитесь, что переменная VITE_GROQ_API_KEY установлена');
+  console.error('   После изменения .env перезапустите dev сервер (npm run dev)');
+} else {
+  console.log('✅ Groq API ключ загружен:', {
+    length: GROQ_API_KEY.length,
+    prefix: GROQ_API_KEY.substring(0, 10) + '...',
+    startsWith: GROQ_API_KEY.startsWith('gsk_') ? '✅ Правильный формат' : '⚠️ Необычный формат'
+  });
 }
 
 type Message = {
@@ -108,6 +116,7 @@ export default function ChatPage() {
   useEffect(() => {
     const loadSessions = async () => {
       if (!user) {
+        console.log('⚠️ No user, skipping session load');
         setIsLoadingSessions(false);
         return;
       }
@@ -116,9 +125,9 @@ export default function ChatPage() {
 
       try {
         setIsLoadingSessions(true);
-        console.log('Loading chat sessions for user:', user.id);
+        console.log('🔄 Loading chat sessions for user:', user.id);
         const appwriteSessions = await NeonService.getChatSessions(user.id);
-        console.log('Loaded sessions:', appwriteSessions.length);
+        console.log('✅ Loaded sessions:', appwriteSessions.length);
         
         if (appwriteSessions.length > 0) {
           const formattedSessions: ChatSession[] = appwriteSessions.map(s => ({
@@ -180,8 +189,13 @@ export default function ChatPage() {
             console.error("Failed to migrate old history", e);
           }
         }
-      } catch (error) {
-        console.error('Failed to load sessions:', error);
+      } catch (error: any) {
+        console.error('❌ Failed to load sessions:', error);
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          userId: user?.id
+        });
         // Fallback to default session - create in DB
         try {
           const defaultSessionData = {
@@ -198,8 +212,12 @@ export default function ChatPage() {
           setSessions([defaultSession]);
           setActiveSessionId(defaultSession.id);
           console.log('✅ Default session created in DB (fallback):', defaultSession.id);
-        } catch (createError) {
-          console.error('Failed to create default session:', createError);
+        } catch (createError: any) {
+          console.error('❌ Failed to create default session:', createError);
+          console.error('Create error details:', {
+            message: createError.message,
+            stack: createError.stack
+          });
           // Last resort: local session
           const defaultSession: ChatSession = {
             id: uuidv4(),
@@ -209,8 +227,10 @@ export default function ChatPage() {
           };
           setSessions([defaultSession]);
           setActiveSessionId(defaultSession.id);
+          console.log('⚠️ Using local session (fallback):', defaultSession.id);
         }
       } finally {
+        console.log('✅ Session loading complete, setting isLoadingSessions to false');
         setIsLoadingSessions(false);
       }
     };
@@ -650,27 +670,87 @@ export default function ChatPage() {
                 ];
             }
 
-            console.log("Sending chat request...", { apiMessages, newMessage });
+            // Check if API key is available
+            if (!GROQ_API_KEY || GROQ_API_KEY.trim() === "") {
+                throw new Error("API ключ Groq не настроен. Проверьте переменную окружения VITE_GROQ_API_KEY.");
+            }
 
-            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${GROQ_API_KEY}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    "model": "llama-3.1-8b-instant", 
-                    "messages": [
-                        ...apiMessages, 
-                        newMessage
-                    ]
-                })
+            console.log("Sending chat request...", { 
+                apiMessagesCount: apiMessages.length, 
+                hasApiKey: !!GROQ_API_KEY,
+                apiKeyPrefix: GROQ_API_KEY ? GROQ_API_KEY.substring(0, 10) + "..." : "не установлен",
+                model: "llama-3.1-8b-instant"
             });
+
+            let response: Response;
+            const requestBody = {
+                "model": "llama-3.1-8b-instant", 
+                "messages": [
+                    ...apiMessages, 
+                    newMessage
+                ]
+            };
+            
+            console.log("📤 Sending request to Groq API...", {
+                url: "https://api.groq.com/openai/v1/chat/completions",
+                hasApiKey: !!GROQ_API_KEY,
+                apiKeyLength: GROQ_API_KEY?.length || 0,
+                messagesCount: requestBody.messages.length,
+                model: requestBody.model
+            });
+
+            try {
+                response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${GROQ_API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(requestBody),
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                console.log("📥 Response received:", {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+            } catch (fetchError: any) {
+                console.error("❌ Fetch error details:", {
+                    name: fetchError.name,
+                    message: fetchError.message,
+                    stack: fetchError.stack,
+                    cause: fetchError.cause
+                });
+                
+                const errorMsg = fetchError.message || "Неизвестная ошибка";
+                
+                // Более детальная диагностика
+                if (errorMsg.includes('Failed to fetch') || 
+                    errorMsg.includes('NetworkError') || 
+                    errorMsg.includes('Network request failed') ||
+                    errorMsg.includes('CORS') ||
+                    fetchError.name === 'TypeError') {
+                    
+                    console.error("🔍 Возможные причины:");
+                    console.error("  1. Проблемы с интернет-соединением");
+                    console.error("  2. CORS блокировка (маловероятно для Groq API)");
+                    console.error("  3. API недоступен или заблокирован");
+                    console.error("  4. Неправильный API ключ");
+                    console.error("  5. Блокировка антивирусом или файрволом");
+                    
+                    throw new Error("Ошибка сети: Не удалось подключиться к API Groq. Проверьте интернет-соединение, убедитесь что API ключ правильный, и проверьте консоль браузера для деталей.");
+                }
+                throw new Error(`Ошибка сети: ${errorMsg}`);
+            }
 
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}));
                 console.error("Chat API Error:", err);
-                throw new Error(err.error?.message || `Chat API error: ${response.status}`);
+                const errorMessage = err.error?.message || `Ошибка API: ${response.status} ${response.statusText}`;
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
@@ -767,8 +847,35 @@ export default function ChatPage() {
 
   if (isLoadingSessions) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)] gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Загрузка чатов...</p>
+        {!user && (
+          <p className="text-xs text-destructive">Пользователь не найден. Пожалуйста, войдите в систему.</p>
+        )}
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)] gap-4">
+        <p className="text-lg font-medium">Необходима авторизация</p>
+        <p className="text-sm text-muted-foreground">Пожалуйста, войдите в систему для использования чата.</p>
+      </div>
+    );
+  }
+
+  if (sessions.length === 0 && !isLoadingSessions) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)] gap-4">
+        <MessageSquare className="h-12 w-12 text-muted-foreground" />
+        <p className="text-lg font-medium">Нет чатов</p>
+        <p className="text-sm text-muted-foreground">Создайте новый чат, чтобы начать общение.</p>
+        <Button onClick={createNewChat}>
+          <Plus className="mr-2 h-4 w-4" />
+          Создать чат
+        </Button>
       </div>
     );
   }

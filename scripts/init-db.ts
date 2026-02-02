@@ -1,4 +1,4 @@
-import { sql } from '../src/lib/neon.js';
+import { sql } from './neon-node.js';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
