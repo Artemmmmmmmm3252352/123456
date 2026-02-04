@@ -3,16 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { List, X } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
+import { useAuth } from '@/context/AuthContext';
 
 const navLinks = [
-  { label: 'About', href: '#about' },
-  { label: 'Portfolio', href: '#portfolio' },
-  { label: 'Process', href: '#process' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'О нас', href: '#about' },
+  { label: 'Портфолио', href: '#portfolio' },
+  { label: 'Процесс', href: '#process' },
+  { label: 'Тарифы', href: '#pricing' },
+  { label: 'Контакты', href: '#contact' },
 ];
 
 const Header = () => {
+  const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -20,10 +22,10 @@ const Header = () => {
       <div className="glass-card mx-4 mt-4 md:mx-8">
         <div className="container flex items-center justify-between h-16 px-6">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <img src="/xvexta_logo.jpg" alt="X-VEXTA Logo" className="w-8 h-8 rounded-full object-cover" />
             <span className="font-medium tracking-tight text-foreground">X-VEXTA</span>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
@@ -40,12 +42,20 @@ const Header = () => {
 
           {/* CTA Button */}
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-               Войти
-            </Link>
-            <Button variant="hero" size="sm" asChild>
-              <Link to="/auth/register">Регистрация</Link>
-            </Button>
+            {user ? (
+              <Button variant="hero" size="sm" asChild>
+                <Link to="/dashboard">Личный кабинет</Link>
+              </Button>
+            ) : (
+              <>
+                <Link to="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Войти
+                </Link>
+                <Button variant="hero" size="sm" asChild>
+                  <Link to="/auth/register">Регистрация</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -74,7 +84,7 @@ const Header = () => {
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                     <span className="text-primary-foreground font-bold text-sm">X</span>
                   </div>
-                  <span className="font-medium tracking-tight text-foreground">CRAFT Studio — Premium Digital</span>
+                  <span className="font-medium tracking-tight text-foreground">X-VEXTA — Премиум цифровые решения</span>
                 </div>
                 <button
                   onClick={() => setIsMenuOpen(false)}
@@ -101,16 +111,24 @@ const Header = () => {
               </nav>
 
               <div className="mt-auto flex flex-col gap-4">
-                <Link 
-                   to="/auth/login" 
-                   onClick={() => setIsMenuOpen(false)}
-                   className="text-center text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                   Войти
-                </Link>
-                <Button variant="hero" size="xl" className="w-full" asChild>
-                  <Link to="/auth/register" onClick={() => setIsMenuOpen(false)}>Регистрация</Link>
-                </Button>
+                {user ? (
+                  <Button variant="hero" size="xl" className="w-full" asChild>
+                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>Личный кабинет</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Link 
+                       to="/auth/login" 
+                       onClick={() => setIsMenuOpen(false)}
+                       className="text-center text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                       Войти
+                    </Link>
+                    <Button variant="hero" size="xl" className="w-full" asChild>
+                      <Link to="/auth/register" onClick={() => setIsMenuOpen(false)}>Регистрация</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/context/AuthContext"
 import { useState, useEffect } from "react"
+import { FileUpload } from "@/components/FileUpload"
 
 export default function SettingsPage() {
   const { user, updateUser, changePassword } = useAuth();
@@ -77,11 +78,29 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="flex items-center gap-4">
-                     <Avatar className="h-20 w-20">
-                        <AvatarImage src={avatar || user.avatar} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-20 w-20">
+                            <AvatarImage src={avatar || user.avatar} alt={user.name} />
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <FileUpload
+                                type="image"
+                                value={avatar}
+                                onChange={setAvatar}
+                                maxSizeMB={2}
+                                maxWidth={400}
+                                maxHeight={400}
+                                quality={0.9}
+                                placeholder="Загрузить аватар"
+                                previewSize="md"
+                            />
+                        </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                        Или введите URL изображения:
+                    </div>
                     <Input
                         type="url"
                         placeholder="Ссылка на фото (jpg/png/svg)"

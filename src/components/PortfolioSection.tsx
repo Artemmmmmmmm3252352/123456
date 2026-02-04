@@ -5,40 +5,40 @@ import { ArrowUpRight, TrendUp, Cube, Headset, MapTrifold, BellRinging } from '@
 const portfolioItems = [
   {
     title: 'Telegram Trading Bot',
-    category: 'Backend Development',
-    description: 'Automated cryptocurrency trading with real-time signals',
+    category: 'Backend разработка',
+    description: 'Автоматизированная торговля криптовалютой с сигналами в реальном времени',
     icon: TrendUp,
     gradient: 'from-emerald-500 to-cyan-500',
     size: 'large',
   },
   {
-    title: 'RPG Inventory System',
-    category: 'Game Development',
-    description: 'Complex item management logic',
+    title: 'RPG система инвентаря',
+    category: 'Разработка игр',
+    description: 'Сложная логика управления предметами',
     icon: Cube,
     gradient: 'from-purple-500 to-pink-500',
     size: 'small',
   },
   {
-    title: 'Support Bot System',
-    category: 'Backend Development',
-    description: 'Smart customer service automation',
+    title: 'Система поддержки ботов',
+    category: 'Backend разработка',
+    description: 'Умная автоматизация клиентского сервиса',
     icon: Headset,
     gradient: 'from-blue-500 to-indigo-500',
     size: 'small',
   },
   {
-    title: 'Procedural Map Generator',
-    category: 'Game Development',
-    description: 'Infinite world generation algorithm',
+    title: 'Генератор процедурных карт',
+    category: 'Разработка игр',
+    description: 'Алгоритм генерации бесконечных миров',
     icon: MapTrifold,
     gradient: 'from-orange-500 to-red-500',
     size: 'large',
   },
   {
-    title: 'Notification Service',
-    category: 'Backend Development',
-    description: 'Multi-channel system alerts',
+    title: 'Сервис уведомлений',
+    category: 'Backend разработка',
+    description: 'Многоканальные системные оповещения',
     icon: BellRinging,
     gradient: 'from-pink-500 to-rose-500',
     size: 'medium',
@@ -108,10 +108,10 @@ const PortfolioSection = () => {
           className="text-center mb-16"
         >
           <h2 className="heading-lg text-foreground mb-6">
-            Selected <span className="text-gradient">Works</span>
+            Избранные <span className="text-gradient">работы</span>
           </h2>
           <p className="body-text max-w-xl mx-auto">
-            A curated collection of our best projects across music and development.
+            Кураторская подборка наших лучших проектов в области музыки и разработки.
           </p>
         </motion.div>
 

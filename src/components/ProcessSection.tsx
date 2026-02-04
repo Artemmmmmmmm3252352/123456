@@ -249,7 +249,7 @@ const ProcessSection = () => {
                     ease: "easeInOut"
                   }}
                 >
-                  <span className="text-lg font-medium tracking-tight">Build Core System</span>
+                  <span className="text-lg font-medium tracking-tight">Создать основную систему</span>
                   <motion.div 
                     initial={{ scale: 0 }}
                     animate={isInView ? { scale: [0, 0, 1, 1, 0] } : {}}
@@ -279,7 +279,7 @@ const ProcessSection = () => {
                     ease: "easeInOut"
                   }}
                 >
-                  <span className="text-lg font-medium tracking-tight">Launch Sequence</span>
+                  <span className="text-lg font-medium tracking-tight">Запуск последовательности</span>
                   <motion.div
                      initial={{ opacity: 0 }}
                      animate={isInView ? { opacity: [0, 0, 1, 1, 0] } : {}}

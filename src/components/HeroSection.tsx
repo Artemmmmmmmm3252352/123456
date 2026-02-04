@@ -3,11 +3,14 @@ import { ArrowRight } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import HeroBackground from './HeroBackground';
 import { useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
 // Custom easing as typed tuple
 const customEase: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 const HeroSection = () => {
+  const { user } = useAuth();
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -85,7 +88,7 @@ const HeroSection = () => {
                 ease: 'easeInOut',
               }}
             />
-            <span className="text-sm text-muted-foreground">Premium Digital Solutions Studio</span>
+            <span className="text-sm text-muted-foreground">Премиум цифровые решения</span>
           </motion.div>
 
           {/* Main Heading with letter animation */}
@@ -152,37 +155,41 @@ const HeroSection = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Button variant="hero" size="lg" className="group relative overflow-hidden">
-                <motion.span
-                  className="absolute inset-0 bg-white/10"
-                  initial={{ x: '-100%', skewX: '-15deg' }}
-                  whileHover={{ x: '200%' }}
-                  transition={{ duration: 0.6, ease: 'easeInOut' }}
-                />
-                <span className="relative z-10 flex items-center gap-2">
-                  Explore Projects
+              <Button variant="hero" size="lg" className="group relative overflow-hidden" asChild>
+                <Link to={user ? '/dashboard' : '/auth/register'}>
                   <motion.span
-                    animate={{ x: [0, 5, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <ArrowRight size={20} weight="bold" />
-                  </motion.span>
-                </span>
+                    className="absolute inset-0 bg-white/10"
+                    initial={{ x: '-100%', skewX: '-15deg' }}
+                    whileHover={{ x: '200%' }}
+                    transition={{ duration: 0.6, ease: 'easeInOut' }}
+                  />
+                  <span className="relative z-10 flex items-center gap-2">
+                    {user ? 'В личный кабинет' : 'Регистрация'}
+                    <motion.span
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <ArrowRight size={20} weight="bold" />
+                    </motion.span>
+                  </span>
+                </Link>
               </Button>
             </motion.div>
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <Button variant="hero-outline" size="lg" className="relative overflow-hidden group">
-                <motion.span
-                  className="absolute inset-0 bg-white/5"
-                  initial={{ scale: 0, opacity: 0 }}
-                  whileHover={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ borderRadius: 'inherit' }}
-                />
-                <span className="relative z-10">Enter X-VEXTA Games</span>
+              <Button variant="hero-outline" size="lg" className="relative overflow-hidden group" asChild>
+                <Link to={user ? '/dashboard' : '/auth/register'}>
+                  <motion.span
+                    className="absolute inset-0 bg-white/5"
+                    initial={{ scale: 0, opacity: 0 }}
+                    whileHover={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ borderRadius: 'inherit' }}
+                  />
+                  <span className="relative z-10">{user ? 'Личный кабинет' : 'Начать работу'}</span>
+                </Link>
               </Button>
             </motion.div>
           </motion.div>
@@ -207,7 +214,7 @@ const HeroSection = () => {
                 className="w-1.5 h-1.5 rounded-full bg-primary"
               />
             </div>
-            <span className="text-xs text-muted-foreground/70 uppercase tracking-widest font-medium">Scroll</span>
+            <span className="text-xs text-muted-foreground/70 uppercase tracking-widest font-medium">Прокрутка</span>
           </motion.div>
         </motion.div>
       </motion.div>

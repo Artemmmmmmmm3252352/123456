@@ -2,54 +2,57 @@ import { motion, useInView } from 'framer-motion';
 import { useRef, useState } from 'react';
 import { Check, Lightning } from '@phosphor-icons/react';
 import { Button } from './ui/button';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
 const plans = [
   {
-    name: 'Starter',
-    description: 'Perfect for trying out',
+    name: 'Стартовый',
+    description: 'Идеально для начала',
     monthlyPrice: 49,
     yearlyPrice: 39,
     features: [
-      '3 bot commands',
-      'Basic automation',
-      '1 beat per month',
-      'Email support',
+      '3 команды бота',
+      'Базовая автоматизация',
+      '1 бит в месяц',
+      'Поддержка по email',
     ],
     popular: false,
   },
   {
-    name: 'Pro',
-    description: 'Best for growing businesses',
+    name: 'Профессиональный',
+    description: 'Лучший для растущего бизнеса',
     monthlyPrice: 149,
     yearlyPrice: 119,
     features: [
-      'Unlimited commands',
-      'Advanced automation',
-      '5 beats per month',
-      'Priority support',
-      'Custom integrations',
-      'Analytics dashboard',
+      'Неограниченные команды',
+      'Продвинутая автоматизация',
+      '5 битов в месяц',
+      'Приоритетная поддержка',
+      'Индивидуальные интеграции',
+      'Аналитическая панель',
     ],
     popular: true,
   },
   {
-    name: 'Enterprise',
-    description: 'For large scale operations',
+    name: 'Корпоративный',
+    description: 'Для крупных операций',
     monthlyPrice: 399,
     yearlyPrice: 319,
     features: [
-      'Everything in Pro',
-      'Dedicated support',
-      'Unlimited beats',
-      'White-label solutions',
-      'SLA guarantee',
-      'Custom development',
+      'Всё из Профессионального',
+      'Выделенная поддержка',
+      'Неограниченные биты',
+      'White-label решения',
+      'Гарантия SLA',
+      'Индивидуальная разработка',
     ],
     popular: false,
   },
 ];
 
 const PricingSection = () => {
+  const { user } = useAuth();
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
   const [isYearly, setIsYearly] = useState(false);
@@ -64,16 +67,16 @@ const PricingSection = () => {
           className="text-center mb-16"
         >
           <h2 className="heading-lg text-foreground mb-6">
-            Simple <span className="text-gradient">Pricing</span>
+            Простые <span className="text-gradient">тарифы</span>
           </h2>
           <p className="body-text max-w-xl mx-auto mb-10">
-            Choose the plan that fits your needs. All plans include core features.
+            Выберите план, который подходит вашим потребностям. Все планы включают основные функции.
           </p>
 
           {/* Toggle */}
           <div className="flex items-center justify-center gap-4">
             <span className={`text-sm transition-colors ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Monthly
+              Месячно
             </span>
             <button
               onClick={() => setIsYearly(!isYearly)}
@@ -86,8 +89,8 @@ const PricingSection = () => {
               />
             </button>
             <span className={`text-sm transition-colors ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Yearly
-              <span className="ml-2 text-xs text-primary">Save 20%</span>
+              Годовой
+              <span className="ml-2 text-xs text-primary">Экономия 20%</span>
             </span>
           </div>
         </motion.div>
@@ -104,7 +107,7 @@ const PricingSection = () => {
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-gradient-to-r from-primary to-accent px-3 py-1 rounded-full">
                   <Lightning size={14} weight="fill" className="text-white" />
-                  <span className="text-xs font-medium text-white">Most Popular</span>
+                  <span className="text-xs font-medium text-white">Популярный</span>
                 </div>
               )}
               
@@ -115,9 +118,9 @@ const PricingSection = () => {
 
               <div className="mb-8">
                 <span className="text-4xl font-light text-foreground">
-                  ${isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                  {isYearly ? plan.yearlyPrice : plan.monthlyPrice}₽
                 </span>
-                <span className="text-muted-foreground">/month</span>
+                <span className="text-muted-foreground">/месяц</span>
               </div>
 
               <ul className="space-y-3 mb-8">
@@ -132,8 +135,11 @@ const PricingSection = () => {
               <Button
                 variant={plan.popular ? 'hero' : 'outline'}
                 className="w-full"
+                asChild
               >
-                Get Started
+                <Link to={user ? '/dashboard/subscription' : '/auth/register'}>
+                  {user ? 'Выбрать план' : 'Начать'}
+                </Link>
               </Button>
             </motion.div>
           ))}

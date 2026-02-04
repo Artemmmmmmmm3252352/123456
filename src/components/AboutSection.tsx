@@ -38,7 +38,7 @@ const AboutSection = () => {
         >
           <div className="inline-flex items-center gap-2 glass-card px-4 py-2 mb-6">
             <Sparkle size={16} className="text-primary" weight="fill" />
-            <span className="text-sm text-muted-foreground">About Us</span>
+            <span className="text-sm text-muted-foreground">О нас</span>
           </div>
           <h2 className="heading-lg text-foreground mb-6">
             Две стороны медали<br />
@@ -82,10 +82,10 @@ const AboutSection = () => {
           className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 max-w-4xl mx-auto"
         >
           {[
-            { value: '50+', label: 'Projects Delivered' },
-            { value: '100+', label: 'Beats Produced' },
-            { value: '24/7', label: 'Bot Uptime' },
-            { value: '5★', label: 'Client Rating' },
+            { value: '50+', label: 'Проектов выполнено' },
+            { value: '100+', label: 'Битов создано' },
+            { value: '24/7', label: 'Работа ботов' },
+            { value: '5★', label: 'Рейтинг клиентов' },
           ].map((stat, index) => (
             <div key={stat.label} className="text-center">
               <div className="text-3xl md:text-4xl font-light text-foreground mb-2">

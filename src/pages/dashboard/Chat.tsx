@@ -15,6 +15,7 @@ import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { useAuth } from "@/context/AuthContext"
 import { NeonService } from "@/lib/neonService"
+import { processImage } from "@/lib/fileUtils"
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || "";
 
@@ -57,6 +58,31 @@ export default function ChatPage() {
   useEffect(() => {
     sessionsRef.current = sessions;
   }, [sessions]);
+
+  // Нормализация сообщений: убеждаемся что content всегда строка
+  const normalizeMessage = (msg: any): Message => {
+    let content = msg.content || "";
+    
+    // Если content не строка, преобразуем в строку
+    if (typeof content !== 'string') {
+      if (Array.isArray(content)) {
+        // Если это массив (мультимодальный формат), извлекаем текстовую часть
+        const textPart = content.find((item: any) => item.type === 'text');
+        content = textPart?.text || JSON.stringify(content);
+      } else if (typeof content === 'object') {
+        content = JSON.stringify(content);
+      } else {
+        content = String(content);
+      }
+    }
+    
+    return {
+      role: msg.role || 'user',
+      content: content,
+      type: msg.type || 'text',
+      imageUrl: msg.imageUrl || undefined
+    };
+  };
   
   // Function to save all sessions to database
   const saveAllSessions = async (sessionsToSave?: ChatSession[]) => {
@@ -133,7 +159,7 @@ export default function ChatPage() {
           const formattedSessions: ChatSession[] = appwriteSessions.map(s => ({
             id: s.id,
             title: s.title,
-            messages: s.messages || [],
+            messages: (s.messages || []).map(normalizeMessage),
             createdAt: new Date(s.createdAt).getTime()
           }));
           setSessions(formattedSessions);
@@ -179,7 +205,7 @@ export default function ChatPage() {
               setSessions([{
                 id: migratedSession.id,
                 title: migratedSession.title,
-                messages: migratedSession.messages,
+                messages: (migratedSession.messages || []).map(normalizeMessage),
                 createdAt: new Date(migratedSession.createdAt).getTime()
               }]);
               setActiveSessionId(migratedSession.id);
@@ -206,7 +232,7 @@ export default function ChatPage() {
           const defaultSession: ChatSession = {
             id: created.id,
             title: created.title,
-            messages: created.messages,
+            messages: (created.messages || []).map(normalizeMessage),
             createdAt: new Date(created.createdAt).getTime()
           };
           setSessions([defaultSession]);
@@ -509,14 +535,31 @@ export default function ChatPage() {
       });
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setSelectedImage(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      // Обрабатываем изображение: сжимаем и конвертируем в data URL
+      const result = await processImage(file, {
+        maxWidth: 1920,
+        maxHeight: 1920,
+        quality: 0.85,
+        maxSizeMB: 5,
+      });
+      
+      setSelectedImage(result.dataUrl);
+      
+      toast({
+        title: 'Изображение загружено',
+        description: `Размер: ${(result.size / 1024).toFixed(1)} KB`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Ошибка загрузки',
+        description: error.message || 'Не удалось обработать изображение',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -652,23 +695,41 @@ export default function ChatPage() {
            // ... Code hidden/disabled for now ... 
         } else {
             // Chat Mode
-            const apiMessages = messages.map(m => ({
-                role: m.role,
-                content: m.content || "" 
-            }));
+            // Преобразуем сообщения для API, убеждаясь что content всегда строка
+            const apiMessages = messages.map(m => {
+                let content = m.content || "";
+                // Если content не строка (например, массив или объект), преобразуем в строку
+                if (typeof content !== 'string') {
+                    if (Array.isArray(content)) {
+                        // Если это массив (мультимодальный формат), извлекаем текстовую часть
+                        const textPart = content.find((item: any) => item.type === 'text');
+                        content = textPart?.text || JSON.stringify(content);
+                    } else {
+                        content = JSON.stringify(content);
+                    }
+                }
+                // Если есть изображение, добавляем упоминание в текст
+                if (m.imageUrl && m.role === 'user') {
+                    content = (content || '') + ' [Прикреплено изображение]';
+                }
+                return {
+                    role: m.role,
+                    content: content
+                };
+            });
+            
+            // Формируем новое сообщение
+            let messageContent = userContent || "";
+            // Если есть изображение, добавляем упоминание в текст
+            // Groq API не поддерживает мультимодальные запросы, поэтому отправляем только текст
+            if (userImage) {
+                messageContent = (messageContent || 'Опиши это изображение') + ' [Прикреплено изображение]';
+            }
             
             const newMessage = { 
-                role: 'user', 
-                content: userContent 
+                role: 'user' as const, 
+                content: messageContent
             };
-            
-            // Handle image input for chat (multimodal) if exists
-            if (userImage) {
-               (newMessage as any).content = [
-                    { type: "text", text: userContent || "Image description request" },
-                    { type: "image_url", image_url: { url: userImage } }
-                ];
-            }
 
             // Check if API key is available
             if (!GROQ_API_KEY || GROQ_API_KEY.trim() === "") {
@@ -679,12 +740,12 @@ export default function ChatPage() {
                 apiMessagesCount: apiMessages.length, 
                 hasApiKey: !!GROQ_API_KEY,
                 apiKeyPrefix: GROQ_API_KEY ? GROQ_API_KEY.substring(0, 10) + "..." : "не установлен",
-                model: "llama-3.1-8b-instant"
+                model: "llama-3.3-70b-versatile"
             });
 
             let response: Response;
             const requestBody = {
-                "model": "llama-3.1-8b-instant", 
+                "model": "llama-3.3-70b-versatile", 
                 "messages": [
                     ...apiMessages, 
                     newMessage
@@ -756,10 +817,21 @@ export default function ChatPage() {
             const data = await response.json();
             const assistantMessage = data.choices[0].message;
 
+            // Нормализуем content ответа от API
+            let assistantContent = assistantMessage.content || "...";
+            if (typeof assistantContent !== 'string') {
+                if (Array.isArray(assistantContent)) {
+                    const textPart = assistantContent.find((item: any) => item.type === 'text');
+                    assistantContent = textPart?.text || JSON.stringify(assistantContent);
+                } else {
+                    assistantContent = String(assistantContent);
+                }
+            }
+
             // Update state and save assistant message immediately
             const assistantMsg: Message = {
                 role: 'assistant',
-                content: assistantMessage.content || "...",
+                content: assistantContent,
                 type: 'text'
             };
             

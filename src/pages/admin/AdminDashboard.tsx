@@ -10,6 +10,7 @@ import { Plus, Trash2, Edit2, Save, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FileUpload } from "@/components/FileUpload"
 
 export default function AdminDashboard() {
     const { products, addProduct, updateProduct, deleteProduct, loadProducts } = useProductStore();
@@ -147,9 +148,26 @@ export default function AdminDashboard() {
                                         <option value="Софт"/>
                                     </datalist>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Ссылка на изображение</Label>
-                                    <Input value={newItem.image} onChange={e => setNewItem({...newItem, image: e.target.value})} placeholder="https://..." />
+                                <div className="space-y-2 col-span-2">
+                                    <FileUpload
+                                        type="image"
+                                        value={newItem.image}
+                                        onChange={(value) => setNewItem({...newItem, image: value})}
+                                        maxSizeMB={5}
+                                        maxWidth={1200}
+                                        maxHeight={800}
+                                        quality={0.85}
+                                        placeholder="Изображение товара"
+                                        previewSize="lg"
+                                    />
+                                    <div className="text-sm text-muted-foreground mt-2">
+                                        Или введите URL изображения:
+                                    </div>
+                                    <Input 
+                                        value={newItem.image} 
+                                        onChange={e => setNewItem({...newItem, image: e.target.value})} 
+                                        placeholder="https://..." 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Минимальный тариф для доступа</Label>

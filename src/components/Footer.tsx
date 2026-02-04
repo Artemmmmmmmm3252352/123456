@@ -2,10 +2,10 @@ import { motion } from 'framer-motion';
 import { EnvelopeSimple, TelegramLogo, InstagramLogo, TwitterLogo } from '@phosphor-icons/react';
 
 const navLinks = [
-  { label: 'About', href: '#about' },
-  { label: 'Portfolio', href: '#portfolio' },
-  { label: 'Process', href: '#process' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'О нас', href: '#about' },
+  { label: 'Портфолио', href: '#portfolio' },
+  { label: 'Процесс', href: '#process' },
+  { label: 'Тарифы', href: '#pricing' },
 ];
 
 const socialLinks = [
@@ -55,7 +55,7 @@ const Footer = () => {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-white/5">
           <p className="text-sm text-muted-foreground">
-            © 2026 X-VEXTA. All rights reserved.
+            © 2026 X-VEXTA. Все права защищены.
           </p>
           <p className="text-sm text-muted-foreground">
             ernestartem@outlook.com
