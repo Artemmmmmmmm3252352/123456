@@ -8,7 +8,7 @@ import { Loader2, Upload, CreditCard } from "lucide-react"
 interface TopUpDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onConfirm: (amount: number) => Promise<void>;
+    onConfirm: (amount: number, screenshot: string | null) => Promise<void>;
 }
 
 export function TopUpDialog({ open, onOpenChange, onConfirm }: TopUpDialogProps) {
@@ -32,9 +32,10 @@ export function TopUpDialog({ open, onOpenChange, onConfirm }: TopUpDialogProps)
     };
 
     const handleSubmit = async () => {
+        if (!screenshot) return;
         setIsLoading(true);
         try {
-            await onConfirm(Number(amount));
+            await onConfirm(Number(amount), screenshot);
             onOpenChange(false);
             // Reset state after close
             setTimeout(() => {

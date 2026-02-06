@@ -6,17 +6,24 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useState, useEffect } from "react"
-import { Plus, Trash2, Edit2, Save, X } from "lucide-react"
+import { Plus, Trash2, Edit2, Save, X, Check, XCircle, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FileUpload } from "@/components/FileUpload"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/context/AuthContext"
 
 export default function AdminDashboard() {
     const { products, addProduct, updateProduct, deleteProduct, loadProducts } = useProductStore();
+    const { user } = useAuth();
     const [isEditing, setIsEditing] = useState<string | null>(null);
     const [newItem, setNewItem] = useState({ title: '', price: '', category: 'Digital', description: '', image: '', purchasedContent: '', accessLevel: 'standard' });
     const [stats, setStats] = useState({ totalRevenue: 0, totalUsers: 0, activeSubs: 0 });
+    const [paymentRequests, setPaymentRequests] = useState<any[]>([]);
+    const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+    const [loadingRequests, setLoadingRequests] = useState(false);
     
     // Load products from Appwrite on mount
     useEffect(() => {
@@ -28,7 +35,7 @@ export default function AdminDashboard() {
         const loadStats = async () => {
             try {
                 const data = await AuthService.getAdminStats();
-                setStats(data);
+            setStats(data);
             } catch (error) {
                 console.error('Failed to load stats:', error);
             }
@@ -39,22 +46,76 @@ export default function AdminDashboard() {
         return () => clearInterval(interval);
     }, []);
 
+    // Load payment requests
+    useEffect(() => {
+        loadPaymentRequests();
+    }, []);
+
+    const loadPaymentRequests = async () => {
+        setLoadingRequests(true);
+        try {
+            const requests = await AuthService.getPaymentRequests('pending');
+            setPaymentRequests(requests);
+        } catch (error) {
+            console.error('Failed to load payment requests:', error);
+            toast({
+                title: "Ошибка",
+                description: "Не удалось загрузить запросы на оплату",
+                variant: "destructive"
+            });
+        } finally {
+            setLoadingRequests(false);
+        }
+    };
+
+    const handleApprovePayment = async (requestId: string) => {
+        if (!user?.id) return;
+        try {
+            await AuthService.approvePaymentRequest(requestId, user.id);
+            toast({ title: "Одобрено", description: "Баланс пользователя пополнен" });
+            loadPaymentRequests();
+            setSelectedRequest(null);
+        } catch (error) {
+            toast({
+                title: "Ошибка",
+                description: error instanceof Error ? error.message : "Не удалось одобрить платеж",
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleRejectPayment = async (requestId: string) => {
+        if (!user?.id) return;
+        try {
+            await AuthService.rejectPaymentRequest(requestId, user.id);
+            toast({ title: "Отклонено", description: "Платеж отклонен" });
+            loadPaymentRequests();
+            setSelectedRequest(null);
+        } catch (error) {
+            toast({
+                title: "Ошибка",
+                description: error instanceof Error ? error.message : "Не удалось отклонить платеж",
+                variant: "destructive"
+            });
+        }
+    };
+
     const { toast } = useToast();
 
     const handleAdd = async () => {
         if (!newItem.title || !newItem.price) return;
         try {
             await addProduct({
-                title: newItem.title,
-                price: Number(newItem.price),
-                category: newItem.category as any,
-                description: newItem.description || "No description",
-                image: newItem.image || "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop&q=60",
-                purchasedContent: newItem.purchasedContent || "",
-                accessLevel: newItem.accessLevel || 'standard'
-            });
-            setNewItem({ title: '', price: '', category: 'Digital', description: '', image: '', purchasedContent: '', accessLevel: 'standard' });
-            toast({ title: "Товар добавлен" });
+            title: newItem.title,
+            price: Number(newItem.price),
+            category: newItem.category as any,
+            description: newItem.description || "No description",
+            image: newItem.image || "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&auto=format&fit=crop&q=60",
+            purchasedContent: newItem.purchasedContent || "",
+            accessLevel: newItem.accessLevel || 'standard'
+        });
+        setNewItem({ title: '', price: '', category: 'Digital', description: '', image: '', purchasedContent: '', accessLevel: 'standard' });
+        toast({ title: "Товар добавлен" });
         } catch (error) {
             toast({ 
                 title: "Ошибка", 
@@ -68,7 +129,7 @@ export default function AdminDashboard() {
         if (confirm("Вы уверены?")) {
             try {
                 await deleteProduct(id);
-                toast({ title: "Товар удален" });
+            toast({ title: "Товар удален" });
             } catch (error) {
                 toast({ 
                     title: "Ошибка", 
@@ -115,6 +176,7 @@ export default function AdminDashboard() {
                 <TabsList>
                     <TabsTrigger value="products">Управление товарами</TabsTrigger>
                     <TabsTrigger value="users">Пользователи</TabsTrigger>
+                    <TabsTrigger value="payments">Запросы на оплату</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="products" className="space-y-4">
@@ -240,6 +302,136 @@ export default function AdminDashboard() {
                             <p className="text-muted-foreground">Функционал управления пользователями в разработке.</p>
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="payments" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Запросы на пополнение баланса</CardTitle>
+                            <CardDescription>
+                                Просмотрите скриншоты оплаты и одобрите или отклоните запросы.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {loadingRequests ? (
+                                <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
+                            ) : paymentRequests.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    Нет ожидающих запросов на оплату
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {paymentRequests.map((request) => (
+                                        <Card key={request.id} className="border-l-4 border-l-yellow-500">
+                                            <CardContent className="pt-6">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="flex-1 space-y-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant="outline" className="gap-1">
+                                                                <Clock className="h-3 w-3" />
+                                                                Ожидает рассмотрения
+                                                            </Badge>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-muted-foreground">Сумма</p>
+                                                            <p className="text-xl font-bold">{request.amount} ₽</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-muted-foreground">Дата запроса</p>
+                                                            <p className="text-sm">
+                                                                {new Date(request.createdAt).toLocaleString('ru-RU')}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-muted-foreground">ID пользователя</p>
+                                                            <p className="text-sm font-mono">{request.userId}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => setSelectedRequest(request)}
+                                                        >
+                                                            Просмотреть скриншот
+                                                        </Button>
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="default"
+                                                                className="bg-green-600 hover:bg-green-700"
+                                                                onClick={() => handleApprovePayment(request.id)}
+                                                            >
+                                                                <Check className="h-4 w-4 mr-1" />
+                                                                Одобрить
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={() => handleRejectPayment(request.id)}
+                                                            >
+                                                                <XCircle className="h-4 w-4 mr-1" />
+                                                                Отклонить
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Dialog open={!!selectedRequest} onOpenChange={(open) => !open && setSelectedRequest(null)}>
+                        <DialogContent className="sm:max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Скриншот оплаты</DialogTitle>
+                                <DialogDescription>
+                                    Сумма: {selectedRequest?.amount} ₽
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                {selectedRequest?.screenshot && (
+                                    <div className="rounded-md border p-4 bg-muted/50">
+                                        <img
+                                            src={selectedRequest.screenshot}
+                                            alt="Screenshot"
+                                            className="w-full h-auto rounded-md"
+                                        />
+                                    </div>
+                                )}
+                                <div className="flex justify-end gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setSelectedRequest(null)}
+                                    >
+                                        Закрыть
+                                    </Button>
+                                    {selectedRequest && (
+                                        <>
+                                            <Button
+                                                variant="default"
+                                                className="bg-green-600 hover:bg-green-700"
+                                                onClick={() => handleApprovePayment(selectedRequest.id)}
+                                            >
+                                                <Check className="h-4 w-4 mr-1" />
+                                                Одобрить
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                onClick={() => handleRejectPayment(selectedRequest.id)}
+                                            >
+                                                <XCircle className="h-4 w-4 mr-1" />
+                                                Отклонить
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </TabsContent>
             </Tabs>
         </div>

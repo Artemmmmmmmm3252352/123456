@@ -193,13 +193,13 @@ export default function ChatPage() {
         }
 
         // Migration: Check localStorage for old data
-        const oldHistory = localStorage.getItem('chat_history');
+      const oldHistory = localStorage.getItem('chat_history');
         if (oldHistory && appwriteSessions.length === 0) {
           try {
             const parsed = JSON.parse(oldHistory);
             if (Array.isArray(parsed) && parsed.length > 0) {
               const migratedSession = await NeonService.createChatSession(user.id, {
-                title: 'Предыдущий чат',
+                    title: 'Предыдущий чат',
                 messages: parsed
               });
               setSessions([{
@@ -214,7 +214,7 @@ export default function ChatPage() {
           } catch (e) {
             console.error("Failed to migrate old history", e);
           }
-        }
+      }
       } catch (error: any) {
         console.error('❌ Failed to load sessions:', error);
         console.error('Error details:', {
@@ -246,10 +246,10 @@ export default function ChatPage() {
           });
           // Last resort: local session
           const defaultSession: ChatSession = {
-            id: uuidv4(),
-            title: 'Новый чат',
-            messages: [{ role: 'assistant', content: 'Привет! Я ваш AI-ассистент. Чем могу помочь?', type: 'text' }],
-            createdAt: Date.now()
+          id: uuidv4(),
+          title: 'Новый чат',
+          messages: [{ role: 'assistant', content: 'Привет! Я ваш AI-ассистент. Чем могу помочь?', type: 'text' }],
+          createdAt: Date.now()
           };
           setSessions([defaultSession]);
           setActiveSessionId(defaultSession.id);
@@ -292,7 +292,7 @@ export default function ChatPage() {
           title: s.title,
           messages: s.messages
         })));
-        
+
         // Also try async save
         saveAllSessions(sessions).catch(err => console.error('Failed to save on unload:', err));
       }
@@ -399,8 +399,8 @@ export default function ChatPage() {
       } catch (error) {
           console.error('Failed to create session:', error);
           // Fallback to local state
-          setSessions(prev => [newSession, ...prev]);
-          setActiveSessionId(newSession.id);
+      setSessions(prev => [newSession, ...prev]);
+      setActiveSessionId(newSession.id);
       }
       setMode('chat');
   };
@@ -409,7 +409,7 @@ export default function ChatPage() {
       e.stopPropagation();
       try {
           await NeonService.deleteChatSession(id);
-          const newSessions = sessions.filter(s => s.id !== id);
+      const newSessions = sessions.filter(s => s.id !== id);
           setSessions(newSessions);
           if (activeSessionId === id && newSessions.length > 0) {
               setActiveSessionId(newSessions[0].id);
@@ -488,19 +488,19 @@ export default function ChatPage() {
   const updateActiveSessionMessages = (updateFn: (prevMessages: Message[]) => Message[]) => {
       setSessions(prev => {
           const updated = prev.map(session => {
-              if (session.id === activeSessionId) {
-                  const newMessages = updateFn(session.messages);
-                  // Update title based on first user question if it's the generic title
-                  let newTitle = session.title;
-                  if (session.title === 'Новый чат') {
-                      const firstUserMsg = newMessages.find(m => m.role === 'user');
-                      if (firstUserMsg && firstUserMsg.content) {
-                          newTitle = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '');
-                      }
+          if (session.id === activeSessionId) {
+              const newMessages = updateFn(session.messages);
+              // Update title based on first user question if it's the generic title
+              let newTitle = session.title;
+              if (session.title === 'Новый чат') {
+                  const firstUserMsg = newMessages.find(m => m.role === 'user');
+                  if (firstUserMsg && firstUserMsg.content) {
+                      newTitle = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '');
                   }
-                  return { ...session, messages: newMessages, title: newTitle };
               }
-              return session;
+              return { ...session, messages: newMessages, title: newTitle };
+          }
+          return session;
           });
           
           // Save immediately - no debounce
@@ -609,12 +609,12 @@ export default function ChatPage() {
         // Increment usage
         // We await this to ensure state consistency
         try {
-            await updateUser({ 
-                quota: { 
-                    used: currentUsed + 1, 
-                    lastReset: (now - lastReset > oneDay) ? now : lastReset 
-                } 
-            }, true);
+        await updateUser({ 
+            quota: { 
+                used: currentUsed + 1, 
+                lastReset: (now - lastReset > oneDay) ? now : lastReset 
+            } 
+        }, true);
         } catch (error) {
             console.error('Failed to update quota:', error);
             // Continue anyway - don't block the chat
@@ -713,7 +713,7 @@ export default function ChatPage() {
                     content = (content || '') + ' [Прикреплено изображение]';
                 }
                 return {
-                    role: m.role,
+                role: m.role,
                     content: content
                 };
             });
@@ -730,7 +730,7 @@ export default function ChatPage() {
                 role: 'user' as const, 
                 content: messageContent
             };
-
+            
             // Check if API key is available
             if (!GROQ_API_KEY || GROQ_API_KEY.trim() === "") {
                 throw new Error("API ключ Groq не настроен. Проверьте переменную окружения VITE_GROQ_API_KEY.");
@@ -746,10 +746,10 @@ export default function ChatPage() {
             let response: Response;
             const requestBody = {
                 "model": "llama-3.3-70b-versatile", 
-                "messages": [
-                    ...apiMessages, 
-                    newMessage
-                ]
+                    "messages": [
+                        ...apiMessages, 
+                        newMessage
+                    ]
             };
             
             console.log("📤 Sending request to Groq API...", {
@@ -1036,14 +1036,14 @@ export default function ChatPage() {
                                      >
                                          <Pencil className="h-3 w-3 text-muted-foreground hover:text-primary" />
                                      </Button>
-                                     <Button
-                                         variant="ghost" 
-                                         size="icon" 
-                                         className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                         onClick={(e) => deleteSession(e, session.id)}
-                                     >
-                                         <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                                     </Button>
+                             <Button
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => deleteSession(e, session.id)}
+                            >
+                                <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                            </Button>
                                  </>
                              )}
                          </div>
@@ -1104,7 +1104,7 @@ export default function ChatPage() {
                             >
                                 {activeSession?.title || "AI Chat"}
                             </CardTitle>
-                            <CardTitle className="text-lg md:hidden">AI Assistant</CardTitle>
+                    <CardTitle className="text-lg md:hidden">AI Assistant</CardTitle>
                             {activeSession && (
                                 <Button
                                     variant="ghost"

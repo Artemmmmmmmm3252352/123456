@@ -2,6 +2,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart3, Users, CreditCard, Activity, Package } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 
+function getDaysRemaining(expiresAt: string | null | undefined): string {
+  if (!expiresAt) return "Бессрочно";
+  
+  const expires = new Date(expiresAt);
+  const now = new Date();
+  const diffTime = expires.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays > 0) {
+    return `Осталось дней: ${diffDays}`;
+  } else {
+    return "Подписка истекла";
+  }
+}
+
 export default function DashboardHome() {
   const { user } = useAuth();
 
@@ -55,7 +70,7 @@ export default function DashboardHome() {
           <CardContent>
             <div className="text-2xl font-bold capitalize">{user.subscription?.plan || "Free"}</div>
             <p className="text-xs text-muted-foreground">
-                {user.subscription?.expiresAt ? `До: ${new Date(user.subscription.expiresAt).toLocaleDateString()}` : "Бессрочно"}
+                {getDaysRemaining(user.subscription?.expiresAt)}
             </p>
           </CardContent>
         </Card>

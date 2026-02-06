@@ -88,12 +88,12 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     }
   },
 
-  stats: {
-      totalUsers: 154,
-      activeSubs: 89,
-      totalRevenue: 12450
-  },
-  updateStats: (newStats) => set((state) => ({
-      stats: { ...state.stats, ...newStats }
-  }))
+      stats: {
+          totalUsers: 154,
+          activeSubs: 89,
+          totalRevenue: 12450
+      },
+      updateStats: (newStats) => set((state) => ({
+          stats: { ...state.stats, ...newStats }
+      }))
 }));

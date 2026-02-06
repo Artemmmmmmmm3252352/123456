@@ -48,12 +48,12 @@ const Header = () => {
               </Button>
             ) : (
               <>
-                <Link to="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                  Войти
-                </Link>
-                <Button variant="hero" size="sm" asChild>
-                  <Link to="/auth/register">Регистрация</Link>
-                </Button>
+            <Link to="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+               Войти
+            </Link>
+            <Button variant="hero" size="sm" asChild>
+              <Link to="/auth/register">Регистрация</Link>
+            </Button>
               </>
             )}
           </div>
@@ -117,16 +117,16 @@ const Header = () => {
                   </Button>
                 ) : (
                   <>
-                    <Link 
-                       to="/auth/login" 
-                       onClick={() => setIsMenuOpen(false)}
-                       className="text-center text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                       Войти
-                    </Link>
-                    <Button variant="hero" size="xl" className="w-full" asChild>
-                      <Link to="/auth/register" onClick={() => setIsMenuOpen(false)}>Регистрация</Link>
-                    </Button>
+                <Link 
+                   to="/auth/login" 
+                   onClick={() => setIsMenuOpen(false)}
+                   className="text-center text-lg font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                   Войти
+                </Link>
+                <Button variant="hero" size="xl" className="w-full" asChild>
+                  <Link to="/auth/register" onClick={() => setIsMenuOpen(false)}>Регистрация</Link>
+                </Button>
                   </>
                 )}
               </div>

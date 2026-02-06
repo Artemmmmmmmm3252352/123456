@@ -3,14 +3,27 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, Loader2, Wallet } from "lucide-react"
 import { SUBSCRIPTION_PLANS } from "@/lib/data"
 import { useAuth } from "@/context/AuthContext"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { TopUpDialog } from "@/components/TopUpDialog"
+
+function getDaysRemaining(expiresAt: string | null | undefined): number | null {
+  if (!expiresAt) return null;
+  
+  const expires = new Date(expiresAt);
+  const now = new Date();
+  const diffTime = expires.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays > 0 ? diffDays : 0;
+}
 
 export default function SubscriptionPage() {
     const { user, subscribe, topUp } = useAuth();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+    
+    const daysRemaining = useMemo(() => getDaysRemaining(user?.subscription?.expiresAt), [user?.subscription?.expiresAt]);
 
     const handleSubscribe = async (planId: string, price: number) => {
         setLoadingPlan(planId);
@@ -28,7 +41,7 @@ export default function SubscriptionPage() {
             <TopUpDialog 
                 open={isTopUpOpen} 
                 onOpenChange={setIsTopUpOpen} 
-                onConfirm={async (amount) => await topUp(amount)}
+                onConfirm={async (amount, screenshot) => await topUp(amount, screenshot)}
             />
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -48,6 +61,23 @@ export default function SubscriptionPage() {
                     <Button variant="outline" size="sm" onClick={() => setIsTopUpOpen(true)}>Пополнить</Button>
                 </Card>
             </div>
+
+            {user.subscription?.plan && user.subscription.plan !== "free" && daysRemaining !== null && daysRemaining > 0 && (
+                <Card className="mb-6 bg-primary/5 border-primary/20">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm text-muted-foreground">Текущая подписка</p>
+                                <p className="text-2xl font-bold capitalize">{user.subscription.plan}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm text-muted-foreground">Осталось дней</p>
+                                <p className="text-3xl font-bold text-primary">{daysRemaining}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
                 {SUBSCRIPTION_PLANS.map((plan) => {

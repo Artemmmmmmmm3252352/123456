@@ -129,8 +129,8 @@ export const AuthService = {
       // Get current user
       const user = await NeonService.getUserById(userId);
       
-      if (user.inventory?.includes(item.id)) throw new Error("Item already owned");
-      
+       if (user.inventory?.includes(item.id)) throw new Error("Item already owned");
+       
       // Check subscription plan - must be exactly 'premium' (case-sensitive, strict check)
       const plan = user.subscription?.plan || 'free';
       const isPremium = plan === 'premium'; // Only 'premium' string, nothing else
@@ -164,30 +164,30 @@ export const AuthService = {
       // Calculate actual price (0 ONLY for premium users, full price for everyone else)
       const actualPrice = (plan === 'premium') ? 0 : item.price;
 
-      const updatedUser = {
-          ...user,
+       const updatedUser = {
+           ...user,
           balance: (user.balance || 0) - actualPrice, // Only deduct if not premium
-          inventory: [...(user.inventory || []), item.id],
-          stats: {
-              ...user.stats,
+           inventory: [...(user.inventory || []), item.id],
+           stats: {
+               ...user.stats,
               totalSpent: (user.stats?.totalSpent || 0) + actualPrice
-          },
-          transactions: [
+           },
+           transactions: [
               { 
                   id: Date.now().toString(), 
                   title: isPremium ? `Получено бесплатно: ${item.title}` : `Куплено: ${item.title}`, 
                   date: new Date().toISOString(), 
                   amount: actualPrice 
               },
-              ...(user.transactions || [])
-          ]
-      };
-      
+               ...(user.transactions || [])
+           ]
+       };
+       
       const savedUser = await NeonService.updateUser(userId, updatedUser);
       updateSession(savedUser);
-      
+       
       const { password: _, ...clean } = savedUser;
-      return clean as User;
+       return clean as User;
   },
 
   // NEW: Update Subscription
@@ -195,41 +195,64 @@ export const AuthService = {
       // Get current user
       const user = await NeonService.getUserById(userId);
 
-      // Check balance if price > 0
-      if (price > 0 && (user.balance || 0) < price) {
-          throw new Error("Недостаточно средств на балансе");
-      }
+       // Check balance if price > 0
+       if (price > 0 && (user.balance || 0) < price) {
+           throw new Error("Недостаточно средств на балансе");
+       }
 
-      const updatedUser = {
-          ...user,
-          balance: price > 0 ? (user.balance || 0) - price : (user.balance || 0),
-          subscription: {
-              plan: plan as any,
-              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 days
-          },
-           stats: {
-              ...user.stats,
-              totalSpent: (user.stats?.totalSpent || 0) + price
-          },
-           transactions: [
-              {
-                  id: Math.random().toString(36).substr(2, 9),
-                  title: `Subscription: ${plan.toUpperCase()}`,
-                  date: new Date().toISOString(),
-                  amount: price
-              },
-              ...(user.transactions || [])
-          ]
-      };
-      
+       // Calculate expiration date: if subscription is still active, add 30 days to current expiration
+       // Otherwise, set expiration to 30 days from now
+       let expiresAt: string;
+       if (user.subscription?.expiresAt) {
+         const currentExpires = new Date(user.subscription.expiresAt);
+         const now = new Date();
+         // If subscription is still active, extend from current expiration date
+         if (currentExpires > now) {
+           expiresAt = new Date(currentExpires.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+         } else {
+           // Subscription expired, start from now
+           expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+         }
+       } else {
+         // No expiration date, start from now
+         expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+       }
+
+       const updatedUser = {
+           ...user,
+           balance: price > 0 ? (user.balance || 0) - price : (user.balance || 0),
+           subscription: {
+               plan: plan as any,
+               expiresAt: expiresAt
+           },
+            stats: {
+               ...user.stats,
+               totalSpent: (user.stats?.totalSpent || 0) + price
+           },
+            transactions: [
+               {
+                   id: Math.random().toString(36).substr(2, 9),
+                   title: `Subscription: ${plan.toUpperCase()}`,
+                   date: new Date().toISOString(),
+                   amount: price
+               },
+               ...(user.transactions || [])
+           ]
+       };
+       
       const savedUser = await NeonService.updateUser(userId, updatedUser);
       updateSession(savedUser);
-      
+       
       const { password: _, ...clean } = savedUser;
-      return clean as User;
+       return clean as User;
   },
 
-  // NEW: Top Up Balance
+  // NEW: Create Payment Request (instead of directly topping up)
+  async createPaymentRequest(userId: string, amount: number, screenshot: string): Promise<void> {
+      await NeonService.createPaymentRequest(userId, { amount, screenshot });
+  },
+
+  // NEW: Top Up Balance (now only used by admin after approval)
   async topUpBalance(userId: string, amount: number): Promise<User> {
       // Get current user
       const user = await NeonService.getUserById(userId);
@@ -253,6 +276,45 @@ export const AuthService = {
       
       const { password: _, ...clean } = savedUser;
       return clean as User;
+  },
+
+  // NEW: Approve Payment Request
+  async approvePaymentRequest(requestId: string, adminUserId: string): Promise<void> {
+      const paymentRequest = await NeonService.getPaymentRequestById(requestId);
+      
+      if (!paymentRequest) {
+          throw new Error('Payment request not found');
+      }
+      
+      if (paymentRequest.status !== 'pending') {
+          throw new Error('Payment request already processed');
+      }
+      
+      // Update status
+      await NeonService.updatePaymentRequestStatus(requestId, 'approved', adminUserId);
+      
+      // Top up user balance
+      await this.topUpBalance(paymentRequest.userId, paymentRequest.amount);
+  },
+
+  // NEW: Reject Payment Request
+  async rejectPaymentRequest(requestId: string, adminUserId: string): Promise<void> {
+      const paymentRequest = await NeonService.getPaymentRequestById(requestId);
+      
+      if (!paymentRequest) {
+          throw new Error('Payment request not found');
+      }
+      
+      if (paymentRequest.status !== 'pending') {
+          throw new Error('Payment request already processed');
+      }
+      
+      await NeonService.updatePaymentRequestStatus(requestId, 'rejected', adminUserId);
+  },
+
+  // NEW: Get Payment Requests (for admin)
+  async getPaymentRequests(status?: 'pending' | 'approved' | 'rejected'): Promise<any[]> {
+      return await NeonService.getPaymentRequests(status);
   },
 
   async changePassword(userId: string, current: string, newPass: string): Promise<void> {

@@ -475,4 +475,108 @@ export const NeonService = {
       throw new Error(error.message || 'Failed to delete product');
     }
   },
+
+  // Payment requests operations
+  async createPaymentRequest(userId: string, data: { amount: number; screenshot: string }): Promise<any> {
+    try {
+      const result = await sql`
+        INSERT INTO payment_requests (user_id, amount, screenshot, status, created_at)
+        VALUES (${userId}::uuid, ${data.amount}, ${data.screenshot}, 'pending', ${new Date().toISOString()})
+        RETURNING *
+      `;
+      if (!result || result.length === 0 || !result[0]) {
+        throw new Error('Failed to create payment request: no data returned');
+      }
+      const row = result[0];
+      return {
+        id: row.id,
+        userId: row.user_id,
+        amount: row.amount,
+        screenshot: row.screenshot,
+        status: row.status,
+        createdAt: row.created_at,
+        reviewedAt: row.reviewed_at,
+        reviewedBy: row.reviewed_by,
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to create payment request');
+    }
+  },
+
+  async getPaymentRequests(status?: 'pending' | 'approved' | 'rejected'): Promise<any[]> {
+    try {
+      let rows;
+      if (status) {
+        rows = await sql`SELECT * FROM payment_requests WHERE status = ${status} ORDER BY created_at DESC`;
+      } else {
+        rows = await sql`SELECT * FROM payment_requests ORDER BY created_at DESC`;
+      }
+      return rows.map((row: any) => ({
+        id: row.id,
+        userId: row.user_id,
+        amount: row.amount,
+        screenshot: row.screenshot,
+        status: row.status,
+        createdAt: row.created_at,
+        reviewedAt: row.reviewed_at,
+        reviewedBy: row.reviewed_by,
+      }));
+    } catch (error: any) {
+      console.error('getPaymentRequests error:', error);
+      return [];
+    }
+  },
+
+  async getPaymentRequestById(requestId: string): Promise<any | null> {
+    try {
+      const rows = await sql`SELECT * FROM payment_requests WHERE id = ${requestId}::uuid LIMIT 1`;
+      if (!rows || rows.length === 0 || !rows[0]) {
+        return null;
+      }
+      const row = rows[0];
+      return {
+        id: row.id,
+        userId: row.user_id,
+        amount: row.amount,
+        screenshot: row.screenshot,
+        status: row.status,
+        createdAt: row.created_at,
+        reviewedAt: row.reviewed_at,
+        reviewedBy: row.reviewed_by,
+      };
+    } catch (error: any) {
+      console.error('getPaymentRequestById error:', error);
+      return null;
+    }
+  },
+
+  async updatePaymentRequestStatus(requestId: string, status: 'approved' | 'rejected', reviewedBy: string): Promise<any> {
+    try {
+      const result = await sql`
+        UPDATE payment_requests 
+        SET 
+          status = ${status},
+          reviewed_at = ${new Date().toISOString()},
+          reviewed_by = ${reviewedBy}::uuid
+        WHERE id = ${requestId}::uuid
+        RETURNING *
+      `;
+      if (!result || result.length === 0 || !result[0]) {
+        throw new Error('Payment request not found or update failed');
+      }
+      const row = result[0];
+      return {
+        id: row.id,
+        userId: row.user_id,
+        amount: row.amount,
+        screenshot: row.screenshot,
+        status: row.status,
+        createdAt: row.created_at,
+        reviewedAt: row.reviewed_at,
+        reviewedBy: row.reviewed_by,
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to update payment request');
+    }
+  },
 };

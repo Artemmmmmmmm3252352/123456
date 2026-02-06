@@ -157,21 +157,21 @@ const HeroSection = () => {
             >
               <Button variant="hero" size="lg" className="group relative overflow-hidden" asChild>
                 <Link to={user ? '/dashboard' : '/auth/register'}>
-                  <motion.span
-                    className="absolute inset-0 bg-white/10"
-                    initial={{ x: '-100%', skewX: '-15deg' }}
-                    whileHover={{ x: '200%' }}
-                    transition={{ duration: 0.6, ease: 'easeInOut' }}
-                  />
-                  <span className="relative z-10 flex items-center gap-2">
+                <motion.span
+                  className="absolute inset-0 bg-white/10"
+                  initial={{ x: '-100%', skewX: '-15deg' }}
+                  whileHover={{ x: '200%' }}
+                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                />
+                <span className="relative z-10 flex items-center gap-2">
                     {user ? 'В личный кабинет' : 'Регистрация'}
-                    <motion.span
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      <ArrowRight size={20} weight="bold" />
-                    </motion.span>
-                  </span>
+                  <motion.span
+                    animate={{ x: [0, 5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <ArrowRight size={20} weight="bold" />
+                  </motion.span>
+                </span>
                 </Link>
               </Button>
             </motion.div>
@@ -181,13 +181,13 @@ const HeroSection = () => {
             >
               <Button variant="hero-outline" size="lg" className="relative overflow-hidden group" asChild>
                 <Link to={user ? '/dashboard' : '/auth/register'}>
-                  <motion.span
-                    className="absolute inset-0 bg-white/5"
-                    initial={{ scale: 0, opacity: 0 }}
-                    whileHover={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    style={{ borderRadius: 'inherit' }}
-                  />
+                <motion.span
+                  className="absolute inset-0 bg-white/5"
+                  initial={{ scale: 0, opacity: 0 }}
+                  whileHover={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ borderRadius: 'inherit' }}
+                />
                   <span className="relative z-10">{user ? 'Личный кабинет' : 'Начать работу'}</span>
                 </Link>
               </Button>

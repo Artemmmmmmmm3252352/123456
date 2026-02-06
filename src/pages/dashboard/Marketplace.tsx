@@ -152,21 +152,21 @@ export default function MarketplacePage() {
                             ) : getAccess(product) ? (
                                 // User has access - show free button for premium, buy button for others
                                 (user?.subscription?.plan === 'premium') ? (
-                                    <Button 
-                                        variant="success"
-                                        onClick={() => handleBuy(product)}
-                                        disabled={loadingMap[product.id]}
-                                    >
-                                        {loadingMap[product.id] && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Добавить бесплатно
-                                    </Button>
-                                ) : (
-                                    <Button 
-                                        onClick={() => handleBuy(product)} 
-                                        disabled={loadingMap[product.id]}
-                                    >
-                                        {loadingMap[product.id] && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Купить
+                                <Button 
+                                    variant="success"
+                                    onClick={() => handleBuy(product)}
+                                    disabled={loadingMap[product.id]}
+                                >
+                                    {loadingMap[product.id] && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Добавить бесплатно
+                                </Button>
+                            ) : (
+                                <Button 
+                                    onClick={() => handleBuy(product)} 
+                                    disabled={loadingMap[product.id]}
+                                >
+                                    {loadingMap[product.id] && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Купить
                                     </Button>
                                 )
                             ) : (

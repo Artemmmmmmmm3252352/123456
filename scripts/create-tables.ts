@@ -75,6 +75,28 @@ async function createTables() {
     await sql`CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)`;
     console.log('  ✅ Index created');
     
+    // Create payment_requests table
+    console.log('💳 Creating payment_requests table...');
+    await sql`
+      CREATE TABLE IF NOT EXISTS payment_requests (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        amount INTEGER NOT NULL,
+        screenshot TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'pending',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        reviewed_at TIMESTAMP WITH TIME ZONE,
+        reviewed_by UUID REFERENCES users(id)
+      )
+    `;
+    console.log('  ✅ Payment requests table created');
+    
+    // Create indexes on payment_requests
+    console.log('📇 Creating indexes on payment_requests...');
+    await sql`CREATE INDEX IF NOT EXISTS idx_payment_requests_user_id ON payment_requests(user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_payment_requests_status ON payment_requests(status)`;
+    console.log('  ✅ Indexes created');
+    
     console.log('\n✅ All tables created successfully!');
     
     // Verify tables

@@ -12,7 +12,7 @@ interface AuthContextType {
   updateUser: (data: Partial<User>, silent?: boolean) => Promise<void>;
   buyProduct: (item: { id: string, title: string, price: number }) => Promise<void>;
   subscribe: (plan: "free" | "pro" | "enterprise", price: number) => Promise<void>;
-  topUp: (amount: number) => Promise<void>;
+  topUp: (amount: number, screenshot: string | null) => Promise<void>;
   changePassword: (current: string, newPass: string) => Promise<void>;
 }
 
@@ -166,23 +166,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
   }
 
-  const topUp = async (amount: number) => {
+  const topUp = async (amount: number, screenshot: string | null) => {
       if (!user || !user.id) {
-        console.error('Cannot top up: user or user.id is missing');
+        console.error('Cannot create payment request: user or user.id is missing');
+        return;
+      }
+      if (!screenshot) {
+        toast({ 
+          title: "Ошибка", 
+          description: "Необходимо прикрепить скриншот оплаты",
+          variant: "destructive"
+        });
         return;
       }
       try {
-          const updated = await AuthService.topUpBalance(user.id, amount);
-          if (updated && updated.id) {
-            setUser(updated);
-            toast({ title: "Баланс пополнен", description: `Зачислено: ${amount} ₽` });
-          } else {
-            throw new Error('Failed to top up balance: invalid response');
-          }
+          await AuthService.createPaymentRequest(user.id, amount, screenshot);
+          toast({ 
+            title: "Запрос отправлен", 
+            description: `Запрос на пополнение баланса на ${amount} ₽ отправлен на рассмотрение. Ожидайте одобрения администратора.` 
+          });
       } catch (error) {
             toast({ 
             title: "Ошибка", 
-            description: "Не удалось пополнить баланс",
+            description: "Не удалось отправить запрос на пополнение",
             variant: "destructive"
           });
           throw error;

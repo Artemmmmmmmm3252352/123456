@@ -42,7 +42,7 @@ export default function LibraryPage() {
             <TopUpDialog 
                 open={isTopUpOpen} 
                 onOpenChange={setIsTopUpOpen} 
-                onConfirm={async (amount) => await topUp(amount)}
+                onConfirm={async (amount, screenshot) => await topUp(amount, screenshot)}
             />
 
             <Dialog open={!!selectedProduct} onOpenChange={(open) => !open && setSelectedProduct(null)}>
